@@ -1,8 +1,8 @@
 
-import SEODashboard from "@/components/SEODashboard";
+import AHoleComponent from "@/components/AHole";
 
 const Index = () => {
-  return <SEODashboard />;
+  return <AHoleComponent />;
 };
 
 export default Index;

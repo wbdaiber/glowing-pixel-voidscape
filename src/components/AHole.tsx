@@ -1,8 +1,6 @@
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { RainbowButton } from "@/components/ui/rainbow-button";
-import SEODashboard from "@/components/SEODashboard";
-import { Search, X } from 'lucide-react';
 
 // Easing functions (simplified version of easing-utils)
 const easingUtils = {
@@ -33,7 +31,6 @@ const AHoleComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
-  const [showSEODashboard, setShowSEODashboard] = useState(false);
   
   // Animation state
   const stateRef = useRef<{
@@ -161,6 +158,7 @@ const AHoleComponent: React.FC = () => {
     const state = stateRef.current;
     const { width, height } = state.rect;
 
+    // Ensure we have valid dimensions
     if (width <= 0 || height <= 0) return;
 
     state.lines = [];
@@ -274,12 +272,14 @@ const AHoleComponent: React.FC = () => {
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 2;
 
+    // Outer disc
     const outerDisc = state.startDisc;
     ctx.beginPath();
     ctx.ellipse(outerDisc.x, outerDisc.y, outerDisc.w, outerDisc.h, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.closePath();
 
+    // Discs
     state.discs.forEach((disc, i) => {
       if (i % 5 !== 0) return;
 
@@ -536,48 +536,28 @@ const AHoleComponent: React.FC = () => {
         <div className="overlay" />
       </div>
       
+      {/* Hero Content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
+        {/* Announcement Badge */}
         <div className="announcement-badge text-white text-sm font-medium px-4 py-2 rounded-full mb-6 flex items-center space-x-3" style={{ fontFamily: 'Martian Mono, monospace' }}>
           <div className="glow-dot"></div>
-          <span>SEO Audit Tool</span>
+          <span>Announcement Here</span>
         </div>
         
         <h1 className="text-white text-4xl md:text-6xl font-bold mb-8 text-center tracking-wider" style={{ fontFamily: 'Martian Mono, monospace' }}>
-          SEO ANALYSIS
+          HERO TEXT GOES HERE
         </h1>
         
         <p className="text-white text-lg md:text-xl mb-8 text-center max-w-2xl px-4 opacity-90" style={{ fontFamily: 'Martian Mono, monospace' }}>
-          Comprehensive SEO auditing tool powered by advanced web crawling and analysis algorithms.
+          Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt.
         </p>
         
-        <div className="pointer-events-auto flex gap-4">
-          <RainbowButton 
-            onClick={() => setShowSEODashboard(true)}
-            style={{ fontFamily: 'Martian Mono, monospace' }}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Launch SEO Audit
+        <div className="pointer-events-auto">
+          <RainbowButton style={{ fontFamily: 'Martian Mono, monospace' }}>
+            Get Started
           </RainbowButton>
         </div>
       </div>
-
-      {showSEODashboard && (
-        <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-lg">
-            <button
-              onClick={() => setShowSEODashboard(false)}
-              className="absolute top-4 right-4 z-40 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors pointer-events-auto"
-              style={{ fontFamily: 'Martian Mono, monospace' }}
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <div className="h-full overflow-y-auto">
-              <SEODashboard />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
