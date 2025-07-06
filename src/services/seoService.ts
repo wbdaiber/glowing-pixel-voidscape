@@ -1,58 +1,92 @@
 
 export class SEOService {
   async analyzePage(url: string) {
-    // Since we can't make cross-origin requests directly from the browser,
-    // this is a simplified frontend implementation that simulates the Python crawler
     try {
       // Validate URL
       const parsedUrl = new URL(url);
       
-      // In a real implementation, you would need a backend API to handle CORS
-      // For now, we'll return mock data based on the URL analysis
-      const mockAnalysis = await this.simulateAnalysis(url);
+      // Attempt to get some real data where possible
+      const realAnalysis = await this.attemptRealAnalysis(url);
       
-      return mockAnalysis;
+      return realAnalysis;
     } catch (error) {
       throw new Error('Invalid URL or analysis failed: ' + error);
     }
   }
 
-  private async simulateAnalysis(url: string): Promise<any> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Parse URL for basic info
+  private async attemptRealAnalysis(url: string): Promise<any> {
+    const startTime = Date.now();
     const parsedUrl = new URL(url);
     const isHttps = parsedUrl.protocol === 'https:';
     
-    // Generate realistic mock data
-    const mockData = {
+    let canFetchContent = false;
+    let actualContent = null;
+    let loadTime = 0;
+    let responseSize = 0;
+    let statusCode = 'CORS_BLOCKED';
+
+    // Try to fetch the URL (will likely fail due to CORS)
+    try {
+      const response = await fetch(url, { 
+        mode: 'no-cors',
+        method: 'GET'
+      });
+      loadTime = Date.now() - startTime;
+      // With no-cors, we can't read the response but we can check if request succeeded
+      statusCode = response.type === 'opaque' ? 'CORS_BLOCKED' : response.status;
+    } catch (error) {
+      loadTime = Date.now() - startTime;
+      statusCode = 'FETCH_ERROR';
+    }
+
+    // For sitemap analysis, try to fetch it if it's from the same domain
+    let sitemapData = null;
+    const possibleSitemaps = [
+      `${parsedUrl.protocol}//${parsedUrl.host}/sitemap.xml`,
+      `${parsedUrl.protocol}//${parsedUrl.host}/sitemap_index.xml`,
+      `${parsedUrl.protocol}//${parsedUrl.host}/page-sitemap.xml`
+    ];
+
+    for (const sitemapUrl of possibleSitemaps) {
+      try {
+        const sitemapResponse = await fetch(sitemapUrl, { mode: 'no-cors' });
+        if (sitemapResponse.type === 'opaque') {
+          sitemapData = { found: true, url: sitemapUrl };
+          break;
+        }
+      } catch (error) {
+        // Continue to next sitemap
+      }
+    }
+
+    // Generate analysis based on what we can determine
+    const analysis = {
       original_url: url,
       final_url: url,
-      status_code: 200,
-      load_time_ms: Math.floor(Math.random() * 3000) + 500,
-      response_size_kb: Math.floor(Math.random() * 500) + 50,
-      content_type: 'text/html; charset=utf-8',
+      status_code: statusCode,
+      load_time_ms: loadTime,
+      response_size_kb: responseSize,
+      content_type: 'Unable to determine (CORS)',
       
-      // Redirects (mostly no redirects for simulation)
+      // Redirects - can't determine due to CORS
       has_redirects: false,
       redirect_count: 0,
-      redirect_type: '',
+      redirect_type: 'Unable to determine (CORS)',
       
-      // Basic SEO elements
-      title: this.generateMockTitle(parsedUrl.hostname),
-      title_length: 0, // Will be calculated
-      meta_description: this.generateMockDescription(parsedUrl.hostname),
-      meta_description_length: 0, // Will be calculated
-      meta_keywords: '',
-      h1: this.generateMockH1(parsedUrl.hostname),
-      h1_length: 0, // Will be calculated
-      h1_count: 1,
-      h2_count: Math.floor(Math.random() * 8) + 2,
-      h3_count: Math.floor(Math.random() * 12) + 3,
-      h4_count: Math.floor(Math.random() * 6),
-      h5_count: Math.floor(Math.random() * 3),
-      h6_count: Math.floor(Math.random() * 2),
+      // Basic SEO elements - can't access due to CORS
+      title: 'Unable to access (CORS restriction)',
+      title_length: 0,
+      meta_description: 'Unable to access (CORS restriction)',
+      meta_description_length: 0,
+      meta_keywords: 'Unable to access (CORS restriction)',
+      h1: 'Unable to access (CORS restriction)',
+      h1_length: 0,
+      h1_count: 0,
+      h2_count: 0,
+      h3_count: 0,
+      h4_count: 0,
+      h5_count: 0,
+      h6_count: 0,
       
       // Duplicate content flags
       title_equals_h1: false,
@@ -61,150 +95,108 @@ export class SEOService {
       meta_desc_duplicate: false,
       
       // Language and localization
-      lang_attribute: 'en',
-      lang_in_html: true,
+      lang_attribute: 'Unable to determine (CORS)',
+      lang_in_html: false,
       hreflang_present: false,
       hreflang_count: 0,
       
-      // Technical SEO
-      canonical_url: url,
-      canonical_self_referencing: true,
-      robots_meta: 'index, follow',
+      // Technical SEO - what we can determine
+      canonical_url: 'Unable to access (CORS restriction)',
+      canonical_self_referencing: false,
+      robots_meta: 'Unable to access (CORS restriction)',
       robots_noindex: false,
       robots_nofollow: false,
       is_https: isHttps,
-      has_viewport: true,
-      viewport_content: 'width=device-width, initial-scale=1',
-      has_favicon: true,
+      has_viewport: false,
+      viewport_content: 'Unable to access (CORS restriction)',
+      has_favicon: false,
       has_amp: false,
       amp_url: '',
       
       // Content analysis
-      word_count: Math.floor(Math.random() * 1500) + 300,
-      sentence_count: Math.floor(Math.random() * 100) + 20,
-      paragraph_count: Math.floor(Math.random() * 15) + 5,
-      list_count: Math.floor(Math.random() * 5) + 1,
-      table_count: Math.floor(Math.random() * 3),
-      flesch_reading_ease: Math.floor(Math.random() * 40) + 40,
-      avg_words_per_sentence: Math.floor(Math.random() * 10) + 15,
+      word_count: 0,
+      sentence_count: 0,
+      paragraph_count: 0,
+      list_count: 0,
+      table_count: 0,
+      flesch_reading_ease: 0,
+      avg_words_per_sentence: 0,
       
       // Link analysis
-      internal_links: Math.floor(Math.random() * 50) + 10,
-      external_links: Math.floor(Math.random() * 20) + 3,
-      total_links: 0, // Will be calculated
-      links_without_text: Math.floor(Math.random() * 3),
+      internal_links: 0,
+      external_links: 0,
+      total_links: 0,
+      links_without_text: 0,
       
       // Image analysis
-      total_images: Math.floor(Math.random() * 20) + 5,
-      images_without_alt: Math.floor(Math.random() * 3),
-      images_with_empty_alt: Math.floor(Math.random() * 2),
-      images_over_100kb: Math.floor(Math.random() * 5),
+      total_images: 0,
+      images_without_alt: 0,
+      images_with_empty_alt: 0,
+      images_over_100kb: 0,
       
       // Social media
-      og_title: '',
-      og_description: '',
-      og_image: `${url}/og-image.jpg`,
-      twitter_title: '',
-      twitter_description: '',
-      twitter_card: 'summary_large_image',
+      og_title: 'Unable to access (CORS restriction)',
+      og_description: 'Unable to access (CORS restriction)',
+      og_image: 'Unable to access (CORS restriction)',
+      twitter_title: 'Unable to access (CORS restriction)',
+      twitter_description: 'Unable to access (CORS restriction)',
+      twitter_card: 'Unable to access (CORS restriction)',
       social_tags_complete: false,
-      missing_social_tags: 'og:title, og:description',
+      missing_social_tags: 'Unable to determine due to CORS restrictions',
       
       // Dates
-      date_published: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-      date_modified: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      date_source: 'schema',
+      date_published: 'Unable to access (CORS restriction)',
+      date_modified: 'Unable to access (CORS restriction)',
+      date_source: 'Unable to access (CORS restriction)',
       
       // Schema.org
-      schema_types: this.getRandomSchemaTypes(),
-      has_structured_data: Math.random() > 0.3,
-      
-      // Issues and warnings will be generated based on other data
-      seo_issues: '',
-      warnings: '',
+      schema_types: 'Unable to access (CORS restriction)',
+      has_structured_data: false,
       
       crawl_timestamp: new Date().toISOString()
     };
 
-    // Calculate derived values
-    mockData.title_length = mockData.title.length;
-    mockData.meta_description_length = mockData.meta_description.length;
-    mockData.h1_length = mockData.h1.length;
-    mockData.total_links = mockData.internal_links + mockData.external_links;
-    mockData.og_title = mockData.title;
-    mockData.og_description = mockData.meta_description;
-
-    // Generate issues and warnings
+    // Generate realistic issues based on what we can determine
     const issues = [];
     const warnings = [];
 
-    if (!mockData.title) issues.push('Missing title tag');
-    else if (mockData.title_length > 60) warnings.push(`Title too long (${mockData.title_length} chars)`);
-    else if (mockData.title_length < 30) warnings.push(`Title too short (${mockData.title_length} chars)`);
+    // Technical issues we can identify
+    if (!isHttps) {
+      issues.push('Website is not using HTTPS - this is a major SEO issue');
+    }
 
-    if (!mockData.meta_description) issues.push('Missing meta description');
-    else if (mockData.meta_description_length > 160) warnings.push(`Meta description too long (${mockData.meta_description_length} chars)`);
-    else if (mockData.meta_description_length < 120) warnings.push(`Meta description too short (${mockData.meta_description_length} chars)`);
+    // CORS-related limitations
+    warnings.push('Full SEO analysis blocked by CORS policy - content analysis unavailable');
+    warnings.push('To perform complete SEO audit, a backend API or browser extension would be required');
+    
+    if (sitemapData) {
+      warnings.push(`Sitemap potentially found at: ${sitemapData.url}`);
+    } else {
+      issues.push('No accessible sitemap found at common locations');
+    }
 
-    if (mockData.h1_count === 0) issues.push('Missing H1 tag');
-    else if (mockData.h1_count > 1) issues.push(`Multiple H1 tags (${mockData.h1_count})`);
+    // URL structure analysis (we can do this)
+    if (url.length > 100) {
+      warnings.push(`URL is quite long (${url.length} characters) - consider shortening`);
+    }
+    
+    if (parsedUrl.pathname.includes('_')) {
+      warnings.push('URL contains underscores - hyphens are preferred for SEO');
+    }
+    
+    if (parsedUrl.search) {
+      warnings.push('URL contains query parameters - ensure they are necessary');
+    }
 
-    if (!mockData.is_https) issues.push('Not using HTTPS');
-    if (!mockData.has_viewport) issues.push('Missing viewport meta tag');
-    if (mockData.images_without_alt > 0) warnings.push(`${mockData.images_without_alt} images without alt text`);
-    if (mockData.load_time_ms > 3000) warnings.push(`Slow page load time (${mockData.load_time_ms}ms)`);
-    if (mockData.word_count < 300) warnings.push(`Low word count (${mockData.word_count} words)`);
+    // Domain analysis
+    const domainParts = parsedUrl.hostname.split('.');
+    if (domainParts.length > 3) {
+      warnings.push('Domain has multiple subdomains - ensure this is intentional');
+    }
 
-    mockData.seo_issues = issues.join('; ');
-    mockData.warnings = warnings.join('; ');
+    analysis.seo_issues = issues.join('; ');
+    analysis.warnings = warnings.join('; ');
 
-    return mockData;
-  }
-
-  private generateMockTitle(hostname: string): string {
-    const titles = [
-      `Welcome to ${hostname} - Your Digital Solution`,
-      `${hostname} | Professional Services & Solutions`,
-      `Home - ${hostname}`,
-      `${hostname} - Quality Services Since 2020`,
-      `Discover ${hostname} - Innovation Meets Excellence`
-    ];
-    return titles[Math.floor(Math.random() * titles.length)];
-  }
-
-  private generateMockDescription(hostname: string): string {
-    const descriptions = [
-      `Discover the best services at ${hostname}. We provide professional solutions for all your needs with exceptional quality and customer service.`,
-      `${hostname} offers innovative solutions and professional services. Contact us today to learn more about how we can help your business grow.`,
-      `Welcome to ${hostname}, your trusted partner for quality services. We deliver excellence in everything we do with a focus on customer satisfaction.`,
-      `At ${hostname}, we specialize in providing top-notch services and solutions. Our experienced team is ready to help you achieve your goals.`
-    ];
-    return descriptions[Math.floor(Math.random() * descriptions.length)];
-  }
-
-  private generateMockH1(hostname: string): string {
-    const h1s = [
-      `Welcome to ${hostname}`,
-      `Professional Services at ${hostname}`,
-      `Your Success Starts Here`,
-      `Quality Solutions for Every Need`,
-      `Excellence in Service Delivery`
-    ];
-    return h1s[Math.floor(Math.random() * h1s.length)];
-  }
-
-  private getRandomSchemaTypes(): string {
-    const types = [
-      'Organization',
-      'LocalBusiness', 
-      'Article',
-      'WebPage',
-      'BreadcrumbList',
-      'Product',
-      'Service',
-      'Review'
-    ];
-    const selectedTypes = types.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 3) + 1);
-    return selectedTypes.join(', ');
+    return analysis;
   }
 }
