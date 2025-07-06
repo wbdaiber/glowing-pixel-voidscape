@@ -1,6 +1,7 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { RainbowButton } from "@/components/ui/rainbow-button";
-import { SEODashboard } from "@/components/SEODashboard";
+import SEODashboard from "@/components/SEODashboard";
 import { Search, X } from 'lucide-react';
 
 // Easing functions (simplified version of easing-utils)
